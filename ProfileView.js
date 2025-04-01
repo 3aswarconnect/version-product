@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, SafeAreaView, ScrollView, TouchableOpacity, Alert, FlatList, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { VideoView, createVideoPlayer } from 'expo-video';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const numColumns = 2;
 const itemWidth = (width - 40) / numColumns;
-
 // VideoItem component for thumbnails in the grid
 const VideoItem = ({ videoUri, style }) => {
   const [playerRef, setPlayerRef] = useState(null);
@@ -64,6 +65,11 @@ const ProfileView = () => {
   const [registeredAt, setRegisteredAt] = useState(null);
   const [accountAgeDays, setAccountAgeDays] = useState(null);
   
+
+  // Streak states
+  const [streakCount, setStreakCount] = useState(0);
+  const [hasGivenStreak, setHasGivenStreak] = useState(false);
+  const [streakLoading, setStreakLoading] = useState(false);
   // Media feed states
   const [media, setMedia] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
@@ -74,6 +80,7 @@ const ProfileView = () => {
   useEffect(() => {
     fetchProfileData();
     fetchMedia();
+    checkUserStreak();
   }, [userId]);
 
   const fetchProfileData = async () => {
@@ -174,6 +181,146 @@ const ProfileView = () => {
     }
   };
 
+
+
+    // Check if the current user has already given a streak to this profile
+    const checkUserStreak = async () => {
+      try {
+        // Get the current logged-in user's data
+        const userDataString = await AsyncStorage.getItem('userData');
+        
+        if (!userDataString) {
+          console.log('No user data found in AsyncStorage');
+          return;
+        }
+        
+        const userData = JSON.parse(userDataString);
+        const currentUserId = userData.userId;
+        
+        console.log('Current userId from AsyncStorage:', currentUserId);
+        
+        if (!currentUserId) {
+          console.log('No userId found in user data');
+          return;
+        }
+        
+        console.log('Checking streak with profileUserId:', userId, 'watchUserId:', currentUserId);
+        
+        const response = await axios.get(`http://192.168.217.183:4000/check-streak`, {
+          params: {
+            profileUserId: userId,
+            watchUserId: currentUserId
+          }
+        });
+        
+        console.log('Streak check response:', response.data);
+        
+        if (response.data) {
+          setStreakCount(response.data.streakCount || 0);
+          setHasGivenStreak(response.data.hasGivenStreak || false);
+        }
+      } catch (error) {
+        console.error('Error checking streak status:', error);
+        if (error.response) {
+          console.error('Error response data:', error.response.data);
+          console.error('Error response status:', error.response.status);
+        }
+      }
+    };
+    
+    useEffect(() => {
+      const verifyUserLoggedIn = async () => {
+        try {
+          const storedUserId = await AsyncStorage.getItem('userId');
+          console.log('Initial check - userId in AsyncStorage:', storedUserId);
+          
+          if (!storedUserId) {
+            console.log('User not logged in based on AsyncStorage check');
+            // Check what keys are actually in AsyncStorage
+            const allKeys = await AsyncStorage.getAllKeys();
+            console.log('Available keys in AsyncStorage:', allKeys);
+            
+            // Check if the userId might be stored under a different key
+            for (const key of allKeys) {
+              const value = await AsyncStorage.getItem(key);
+              console.log(`AsyncStorage key: ${key}, value: ${value}`);
+            }
+          }
+        } catch (error) {
+          console.error('Error verifying login status:', error);
+        }
+      };
+      
+      verifyUserLoggedIn();
+      fetchProfileData();
+      fetchMedia();
+      checkUserStreak();
+    }, [userId]);
+  
+    // Handle streak button press
+    const handleStreakPress = async () => {
+      // First check if user is trying to give streak to themselves
+      try {
+        const userDataString = await AsyncStorage.getItem('userData');
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+          if (userData.userId === userId) {
+            Alert.alert("Notice", "You can't give a streak to yourself!");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking self-streak:', error);
+      }
+    
+      if (hasGivenStreak) {
+        Alert.alert("Already Given", "You've already given a streak to this profile!");
+        return;
+      }
+      
+      try {
+        setStreakLoading(true);
+        
+        // Get the current logged-in user's data
+        const userDataString = await AsyncStorage.getItem('userData');
+        
+        if (!userDataString) {
+          Alert.alert("Error", "You need to be logged in to give streaks");
+          setStreakLoading(false);
+          return;
+        }
+        
+        const userData = JSON.parse(userDataString);
+        const watchUserId = userData.userId;
+        
+        console.log('Sending streak request with profileUserId:', userId, 'watchUserId:', watchUserId);
+        
+        const response = await axios.post(`http://192.168.217.183:4000/add-streak`, {
+          profileUserId: userId,
+          watchUserId
+        });
+        
+        console.log('Streak response:', response.data);
+        
+        if (response.data.success) {
+          setStreakCount(response.data.streakCount);
+          setHasGivenStreak(true);
+          Alert.alert("Success", "Prime given successfully!");
+        } else {
+          Alert.alert("Error", response.data.message || "Failed to give Prime");
+        }
+      } catch (error) {
+        console.error('Error giving Prime:', error);
+        if (error.response) {
+          console.error('Error response data:', error.response.data);
+          console.error('Error response status:', error.response.status);
+        }
+        Alert.alert("Error", "Failed to give Prime. Please try again later.");
+      } finally {
+        setStreakLoading(false);
+      }
+    };
+
   const handleMediaPress = (item, index) => {
     // Navigate to full feed/reels view with the selected item
     navigation.navigate('Feed', {
@@ -255,6 +402,36 @@ const ProfileView = () => {
               </View>
             )}
           </View>
+          <View style={styles.streakContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.streakButton, 
+                hasGivenStreak && styles.streakButtonGiven
+              ]}
+              onPress={handleStreakPress}
+              disabled={streakLoading || hasGivenStreak}
+            >
+              {streakLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons 
+                    name={hasGivenStreak ? "flame" : "flame-outline"} 
+                    size={24} 
+                    color="#FFFFFF" 
+                    style={styles.streakIcon} 
+                  />
+                  <Text style={styles.streakText}>
+                    {hasGivenStreak ? "Primes Given!" : "Give Prime"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <Text style={styles.streakCount}>
+              {streakCount} {streakCount === 1 ? 'Prime' : 'Primes'}
+            </Text>
+          </View>
+          
           
           {/* Registration info */}
           {accountAgeDays !== null && (
@@ -403,6 +580,43 @@ const ProfileView = () => {
 };
 
 const styles = StyleSheet.create({
+
+
+  streakContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  streakButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B00',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 1, height: 3 },
+    elevation: 3,
+    marginBottom: 5,
+  },
+  streakButtonGiven: {
+    backgroundColor: '#FF9500',
+  },
+  streakIcon: {
+    marginRight: 8,
+  },
+  streakText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  streakCount: {
+    fontSize: 14,
+    color: '#666666',
+    fontWeight: 'bold',
+    marginTop: 5,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: 'white',
