@@ -18,15 +18,18 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [registeredAt, setRegisteredAt] = useState(null);
   const [accountAgeDays, setAccountAgeDays] = useState(null);
+  const [streakCount, setStreakCount] = useState(0);
  
   useFocusEffect(
     React.useCallback(() => {
       fetchProfileData();
+      fetchStreakCount();
     }, [route.params?.refreshProfile])
   );
 
   useEffect(() => {
     fetchProfileData();
+    fetchStreakCount();
   }, []);
 
   const fetchProfileData = async () => {
@@ -65,6 +68,20 @@ const ProfileScreen = () => {
       console.log('No profile data found for this user yet.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchStreakCount = async () => {
+    try {
+      const response = await axios.get(`http://192.168.217.183:4000/get-streak-count`, {
+        params: { profileUserId: userId }
+      });
+      
+      if (response.data.success) {
+        setStreakCount(response.data.streakCount);
+      }
+    } catch (error) {
+      console.log('Error fetching streak count:', error);
     }
   };
 
@@ -110,68 +127,74 @@ const ProfileScreen = () => {
   };
   
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
-      
-      {/* Wellkin Header */}
-      <View style={styles.wellkinHeader}>
-        <Text style={styles.wellkinTitle}>Wellkin</Text>
-        <View style={styles.headerLeftIcon}>
-          <TouchableOpacity onPress={navigateToFeed}>
-            <Ionicons name="images-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+    
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
         
-        <View style={styles.headerRightIcon}>
-          <TouchableOpacity onPress={navigateToSettings}>
-            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Absolutely Positioned Profile Image */}
-      <View style={styles.absoluteProfileImageContainer}>
-        {profilePic ? (
-          <Image 
-            source={{ uri: profilePic }} 
-            style={styles.absoluteProfileImage} 
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[styles.absoluteProfileImage, styles.placeholderImage]}>
-            <Ionicons name="person" size={80} color="#FFFFFF" />
+        {/* Fixed Wellkin Header */}
+        <View style={styles.wellkinHeader}>
+          <Text style={styles.wellkinTitle}>Wellkin</Text>
+          <View style={styles.headerLeftIcon}>
+            <TouchableOpacity onPress={navigateToFeed}>
+              <Ionicons name="images-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
-
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Spacer to push content below fixed profile image */}
-        <View style={styles.scrollContentSpacer} />
-        
-        {/* User Info */}
-        <View style={styles.userInfoContainer}>
-          {name ? (
-            <Text style={styles.name}>{name}</Text>
-          ) : (
-            <Text style={styles.noInfoText}>Add your name</Text>
-          )}
-          <Text style={styles.username}>@{username}</Text>
           
-          {accountAgeDays !== null && (
-            <View style={styles.accountAgeContainer}>
-              <Ionicons name="time-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.accountAgeText}>
-                {accountAgeDays} {accountAgeDays === 1 ? 'day' : 'days'} with us
+          <View style={styles.headerRightIcon}>
+            <TouchableOpacity onPress={navigateToSettings}>
+              <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+  
+        {/* Scrollable Content (including profile image) */}
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile Image */}
+          <View style={styles.profileImageContainer}>
+            {profilePic ? (
+              <Image 
+                source={{ uri: profilePic }} 
+                style={styles.profileImage} 
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.profileImage, styles.placeholderImage]}>
+                <Ionicons name="person" size={80} color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+          
+          {/* User Info */}
+          <View style={styles.userInfoContainer}>
+            {name ? (
+              <Text style={styles.name}>{name}</Text>
+            ) : (
+              <Text style={styles.noInfoText}>Add your name</Text>
+            )}
+            <Text style={styles.username}>@{username}</Text>
+            
+            {/* Streak Count Display */}
+            <View style={styles.streakContainer}>
+              <Ionicons name="flame" size={16} color="#FF9500" />
+              <Text style={styles.streakText}>
+                {streakCount} {streakCount === 1 ? 'Prime' : 'Primes'}
               </Text>
             </View>
-          )}
-        </View>
+            
+            {accountAgeDays !== null && (
+              <View style={styles.accountAgeContainer}>
+                <Ionicons name="time-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.accountAgeText}>
+                  {accountAgeDays} {accountAgeDays === 1 ? 'day' : 'days'} with us
+                </Text>
+              </View>
+            )}
+          </View>
         
-        {/* Rest of the content remains the same */}
         {/* Bio section */}
         <View style={styles.bioContainer}>
           {bio ? (
@@ -229,13 +252,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C1C1E',
   },
   wellkinHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: '#1C1C1E',
-    zIndex: 10,
+    zIndex: 100, // Ensure header stays above everything
   },
   headerLeftIcon: {
     width: 50,  
@@ -251,33 +278,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  absoluteProfileImageContainer: {
-    position: 'absolute',
-    top: 65, // Adjust this value to position the image correctly
-    width: width,
-    height: height * 0.5,
-    zIndex: 5,
-    paddingHorizontal: 12,
-    paddingVertical:10,
-    borderRadius:28,
-
-  },
-  absoluteProfileImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius:8,
-  },
-  // Spacer to push content below fixed profile image
-  scrollContentSpacer: {
-    height: height * 0.5, // Same height as the profile image
-  },
   scrollView: {
     flex: 1,
     backgroundColor: '#1C1C1E',
+    marginTop: 60, // Make space for the fixed header
   },
   scrollViewContent: {
+    paddingBottom: 20,
+  },
+  profileImageContainer: {
+    width: '100%',
+    height: height * 0.5,
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderImage: {
@@ -285,7 +302,6 @@ const styles = StyleSheet.create({
   },
   userInfoContainer: {
     alignItems: 'center',
-    marginTop: 20,
     marginBottom: 20,
     paddingHorizontal: 16,
   },
@@ -299,6 +315,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8E8E93',
     marginBottom: 10,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2C2C2E',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 6,
+  },
+  streakText: {
+    fontSize: 14,
+    color: '#FF9500',
+    marginLeft: 6,
+    fontWeight: '500',
   },
   accountAgeContainer: {
     flexDirection: 'row',
