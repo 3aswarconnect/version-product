@@ -19,9 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const { width, height } = Dimensions.get("window");
-
-// Custom Alert Component
+// Custom Alert Component with dark theme
 const CustomAlert = ({ visible, title, message, onDismiss }) => {
   const [animation] = useState(new Animated.Value(0));
   
@@ -117,7 +115,7 @@ const AuthScreen = () => {
       return;
     }
     try {
-      const response = await axios.post("http://192.168.217.183:4000/signin", {
+      const response = await axios.post("http://192.168.190.183:4000/signin", {
         identifier: email,
         password,
       });
@@ -145,7 +143,7 @@ const AuthScreen = () => {
       return;
     }
     try {
-      const response = await axios.post("http://192.168.217.183:4000/register", {
+      const response = await axios.post("http://192.168.190.183:4000/register", {
         username: email.split('@')[0], // Simple username from email
         email: email,
         password,
@@ -167,14 +165,14 @@ const AuthScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#A0C15A" />
+        <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#333333" barStyle="light-content" />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
@@ -201,23 +199,24 @@ const AuthScreen = () => {
             </TouchableOpacity>
           </View>
           
-          <View style={styles.inputsContainer}>
+          <View style={styles.formWrapper}>
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="email-outline" size={20} color="#888888" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="email-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
               <TextInput
-                placeholder="Email ID"
+                placeholder="Email"
                 placeholderTextColor="#888888"
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
-                theme={{ colors: { text: '#FFFFFF' } }}
+                textColor="#FFFFFF"  // Explicitly set text color
+                theme={{ colors: { text: '#FFFFFF', primary: '#FFFFFF', placeholder: '#888888' } }}
                 underlineColor="transparent"
                 activeUnderlineColor="transparent"
               />
             </View>
             
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="lock-outline" size={20} color="#888888" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
               <TextInput
                 placeholder="Password"
                 placeholderTextColor="#888888"
@@ -225,16 +224,17 @@ const AuthScreen = () => {
                 onChangeText={setPassword}
                 secureTextEntry={!passwordVisible}
                 style={styles.input}
-                theme={{ colors: { text: '#FFFFFF' } }}
+                textColor="#FFFFFF"  // Explicitly set text color
+                theme={{ colors: { text: '#FFFFFF', primary: '#FFFFFF', placeholder: '#888888' } }}
                 underlineColor="transparent"
                 activeUnderlineColor="transparent"
-                right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} color="#888888" onPress={() => setPasswordVisible(!passwordVisible)} />}
+                right={<TextInput.Icon icon={passwordVisible ? "eye-off" : "eye"} color="#AAAAAA" iconColor="#AAAAAA" onPress={() => setPasswordVisible(!passwordVisible)} />}
               />
             </View>
             
             {isSignup && (
               <View style={styles.inputContainer}>
-                <MaterialCommunityIcons name="lock-outline" size={20} color="#888888" style={styles.inputIcon} />
+                <MaterialCommunityIcons name="lock-outline" size={20} color="#AAAAAA" style={styles.inputIcon} />
                 <TextInput
                   placeholder="Confirm Password"
                   placeholderTextColor="#888888"
@@ -242,16 +242,19 @@ const AuthScreen = () => {
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!passwordVisible}
                   style={styles.input}
-                  theme={{ colors: { text: '#FFFFFF' } }}
+                  textColor="#FFFFFF"  // Explicitly set text color
+                  theme={{ colors: { text: '#FFFFFF', primary: '#FFFFFF', placeholder: '#888888' } }}
                   underlineColor="transparent"
                   activeUnderlineColor="transparent"
                 />
               </View>
             )}
             
-            <TouchableOpacity style={styles.forgotContainer}>
-              <Text style={styles.forgotText}>Forgot Password ?</Text>
-            </TouchableOpacity>
+            {!isSignup && (
+              <TouchableOpacity style={styles.forgotContainer}>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity 
               style={styles.actionButton} 
@@ -278,13 +281,13 @@ const AuthScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#333333",
+    backgroundColor: "#000000",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#333333",
+    backgroundColor: "#000000",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -301,6 +304,8 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 25,
   },
   logoIcon: {
     transform: [{ rotate: '180deg' }],
@@ -312,15 +317,17 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     marginBottom: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: "#222222",
   },
   tab: {
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     marginRight: 20,
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: "#A0C15A",
+    borderBottomColor: "#FFFFFF",
   },
   tabText: {
     color: "#888888",
@@ -328,9 +335,13 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: "#FFFFFF",
-    fontWeight: "500",
+    fontWeight: "600",
   },
-  inputsContainer: {
+  formWrapper: {
+    backgroundColor: "#0D0D0D",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 20,
     width: "100%",
   },
   inputContainer: {
@@ -338,7 +349,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#555555",
+    borderBottomColor: "#222222",
     paddingBottom: 5,
   },
   inputIcon: {
@@ -357,18 +368,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   forgotText: {
-    color: "#888888",
+    color: "#AAAAAA",
     fontSize: 14,
   },
   actionButton: {
-    backgroundColor: "#A0C15A",
-    paddingVertical: 12,
-    borderRadius: 4,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 10,
   },
   actionButtonText: {
-    color: "#FFFFFF",
+    color: "#000000",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -381,10 +393,12 @@ const styles = StyleSheet.create({
   },
   alertContainer: {
     width: "80%",
-    backgroundColor: "#444444",
+    backgroundColor: "#1A1A1A",
     borderRadius: 10,
     padding: 20,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#333333",
   },
   alertTitle: {
     fontSize: 18,
@@ -399,13 +413,13 @@ const styles = StyleSheet.create({
     color: "#DDDDDD",
   },
   alertButton: {
-    backgroundColor: "#A0C15A",
+    backgroundColor: "#FFFFFF",
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 5,
   },
   alertButtonText: {
-    color: "#FFFFFF",
+    color: "#000000",
     fontWeight: "600",
   },
 });
