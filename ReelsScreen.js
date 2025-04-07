@@ -16,7 +16,7 @@ const categories = ['All','Entertainment','Kids Corner','Food/cooking','News','G
 // Export this function to be available for prefetching in SplashScreen
 export const fetchReelsData = async (category = 'All') => {
   try {
-    const response = await axios.get(`http://192.168.217.183:4000/reels?category=${category}`);
+    const response = await axios.get(`http://192.168.25.183:4000/reels?category=${category}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching reels:', error);
@@ -44,7 +44,7 @@ const ThumbnailItem = React.memo(({ item, onPress, index }) => {
 
   const fetchProfileData = async (userId) => {
     try {
-      const response = await axios.get(`http://192.168.217.183:4000/profileget`, {
+      const response = await axios.get(`http://192.168.25.183:4000/profileget`, {
         params: { userId },
       });
 
@@ -161,7 +161,7 @@ const VideoItem = React.memo(({ item, isActive, index, screenFocused, navigation
   
   const fetchProfileData = async () => {
     try {
-      const response = await axios.get(`http://192.168.217.183:4000/profileget`, {
+      const response = await axios.get(`http://192.168.25.183:4000/profileget`, {
         params: { userId }
       });
       
@@ -366,7 +366,7 @@ const ReelsScreen = () => {
     try {
       if (ids.length === 0) return;
       
-      const response = await axios.post('http://192.168.217.183:4000/increment-views', {
+      const response = await axios.post('http://192.168.25.183:4000/increment-views', {
         videoIds: ids
       });
       

@@ -40,7 +40,7 @@ export default function App() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="EditProfile" component={EditProfile} />
         <Stack.Screen name="TermsAndConditions" component={TermsAndConditionsScreen} />
-        <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="About" component={AboutScreen}   options={{ headerShown: false }} />
         <Stack.Screen name="Feed" component={FeedScreen} />
         <Stack.Screen name="ProfileView" component={ProfileView} />
         

@@ -87,7 +87,7 @@ const ProfileView = () => {
     setIsLoading(true);
     try {
       console.log(`Fetching profile for userId: ${userId}`);
-      const response = await axios.get(`http://192.168.217.183:4000/profileget`, {
+      const response = await axios.get(`http://192.168.25.183:4000/profileget`, {
         params: { userId: userId }
       });
       
@@ -132,7 +132,7 @@ const ProfileView = () => {
         category: selectedCategory !== 'All' ? selectedCategory : undefined
       });
       
-      const response = await axios.get(`http://192.168.217.183:4000/getUserMedia`, {
+      const response = await axios.get(`http://192.168.25.183:4000/getUserMedia`, {
         params: {
           userId: userId,
           category: selectedCategory !== 'All' ? selectedCategory : undefined
@@ -206,7 +206,7 @@ const ProfileView = () => {
         
         console.log('Checking streak with profileUserId:', userId, 'watchUserId:', currentUserId);
         
-        const response = await axios.get(`http://192.168.217.183:4000/check-streak`, {
+        const response = await axios.get(`http://192.168.25.183:4000/check-streak`, {
           params: {
             profileUserId: userId,
             watchUserId: currentUserId
@@ -295,7 +295,7 @@ const ProfileView = () => {
         
         console.log('Sending streak request with profileUserId:', userId, 'watchUserId:', watchUserId);
         
-        const response = await axios.post(`http://192.168.217.183:4000/add-streak`, {
+        const response = await axios.post(`http://192.168.25.183:4000/add-streak`, {
           profileUserId: userId,
           watchUserId
         });

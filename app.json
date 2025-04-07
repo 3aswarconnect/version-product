@@ -32,9 +32,16 @@
       }
     },
     "owner": "easwarconnect",
-    "plugins": [
-      "expo-video",
-      "react-native-video"
-    ]
+   "plugins": [
+  "expo-video",
+  "react-native-video",
+  [
+    "expo-image-picker",
+    {
+      "photosPermission": "The app needs access to your photos to share them with your friends.",
+      "cameraPermission": "The app needs access to your camera to take photos for status updates."
+    }
+  ]
+]
   }
 }
